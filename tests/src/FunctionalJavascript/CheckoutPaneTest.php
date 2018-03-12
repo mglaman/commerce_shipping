@@ -273,7 +273,7 @@ class CheckoutPaneTest extends CommerceBrowserTestBase {
       'locality' => 'Paris',
       'postal_code' => '75002',
     ];
-    $address_prefix = 'shipping_information[shipping_profile][address][0][address]';
+    $address_prefix = 'shipping_information[shipping][shipping_profile][address][0][address]';
     $page = $this->getSession()->getPage();
     $page->fillField($address_prefix . '[country_code]', 'FR');
     $this->waitForAjaxToFinish();
@@ -385,7 +385,7 @@ class CheckoutPaneTest extends CommerceBrowserTestBase {
       'administrative_area' => 'CA',
       'postal_code' => '94043',
     ];
-    $address_prefix = 'shipping_information[shipping_profile][address][0][address]';
+    $address_prefix = 'shipping_information[shipping][shipping_profile][address][0][address]';
     $page->fillField($address_prefix . '[country_code]', 'US');
     $this->waitForAjaxToFinish();
     foreach ($address as $property => $value) {
