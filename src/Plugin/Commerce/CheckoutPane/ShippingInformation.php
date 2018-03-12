@@ -150,7 +150,7 @@ class ShippingInformation extends CheckoutPaneBase implements ContainerFactoryPl
    * {@inheritdoc}
    */
   public function buildPaneForm(array $pane_form, FormStateInterface $form_state, array &$complete_form) {
-    $shipments  = $this->order->shipments->referencedEntities();
+    $shipments = $this->order->shipments->referencedEntities();
     $force_packing = empty($shipments) && empty($this->configuration['require_shipping_profile']);
     $pane_form['shipping'] = [
       '#type' => 'commerce_shipment_form',

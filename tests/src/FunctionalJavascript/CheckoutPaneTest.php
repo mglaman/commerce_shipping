@@ -195,7 +195,7 @@ class CheckoutPaneTest extends CommerceBrowserTestBase {
       'administrative_area' => 'CA',
       'postal_code' => '94043',
     ];
-    $address_prefix = 'shipping_information[shipping_profile][address][0][address]';
+    $address_prefix = 'shipping_information[shipping][shipping_profile][address][0][address]';
     // Confirm that the country list has been restricted.
     $this->assertOptions($address_prefix . '[country_code]', ['US', 'FR', 'DE']);
 
