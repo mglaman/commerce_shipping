@@ -286,12 +286,12 @@ class CheckoutPaneTest extends CommerceBrowserTestBase {
     foreach ([0, 1] as $shipment_index) {
       $label_index = $shipment_index + 1;
       $this->assertSession()->pageTextContains('Shipment #' . $label_index);
-      $first_radio_button = $page->findField('shipping_information[shipments][' . $shipment_index . '][shipping_method][0]');
-      $second_radio_button = $page->findField('shipping_information[shipments][' . $shipment_index . '][shipping_method][0]');
+      $first_radio_button = $page->findField('shipping_information[shipping][shipments][' . $shipment_index . '][shipping_method][0]');
+      $second_radio_button = $page->findField('shipping_information[shipping][shipments][' . $shipment_index . '][shipping_method][0]');
       $this->assertNotNull($first_radio_button);
       $this->assertNotNull($second_radio_button);
       // The radio buttons don't have access to their own labels.
-      $selector = '//fieldset[@data-drupal-selector="edit-shipping-information-shipments-0-shipping-method-0"]';
+      $selector = '//fieldset[@data-drupal-selector="edit-shipping-information-shipping-shipments-0-shipping-method-0"]';
       $this->assertSession()->elementTextContains('xpath', $selector, 'Standard shipping: $9.99');
       $this->assertSession()->elementTextContains('xpath', $selector, 'Overnight shipping: $19.99');
     }
