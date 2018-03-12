@@ -5,7 +5,7 @@
  * Provides core shipping functionality.
  */
 
-use Drupal\commerce\BundleFieldDefinition;
+use Drupal\entity\BundleFieldDefinition;
 use Drupal\commerce\PurchasableEntityInterface;
 use Drupal\commerce_order\Entity\OrderInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
@@ -156,7 +156,7 @@ function commerce_shipping_order_type_form_submit(array $form, FormStateInterfac
 }
 
 /**
- * Builds the $order->shipment field definition.
+ * Builds the $order->shipments field definition.
  *
  * @param string $order_type_id
  *   The order type ID.
