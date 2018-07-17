@@ -14,6 +14,7 @@ use Drupal\physical\WeightUnit;
  * @ConfigEntityType(
  *   id = "commerce_package_type",
  *   label = @Translation("Package type"),
+ *   label_collection = @Translation("Package types"),
  *   label_singular = @Translation("package type"),
  *   label_plural = @Translation("package types"),
  *   label_count = @PluralTranslation(

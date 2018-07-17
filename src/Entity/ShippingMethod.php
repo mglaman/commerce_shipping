@@ -14,6 +14,7 @@ use Drupal\Core\Field\BaseFieldDefinition;
  * @ContentEntityType(
  *   id = "commerce_shipping_method",
  *   label = @Translation("Shipping method"),
+ *   label_collection = @Translation("Shipping methods"),
  *   label_singular = @Translation("shipping method"),
  *   label_plural = @Translation("shipping methods"),
  *   label_count = @PluralTranslation(
