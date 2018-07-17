@@ -2,8 +2,7 @@
 
 namespace Drupal\commerce_shipping\Plugin\Field\FieldWidget;
 
-use Drupal\commerce_price\Entity\Currency;
-use Drupal\commerce_price\NumberFormatterFactoryInterface;
+use CommerceGuys\Intl\Formatter\CurrencyFormatterInterface;
 use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Field\FieldDefinitionInterface;
@@ -34,11 +33,11 @@ class ShippingRateWidget extends WidgetBase implements ContainerFactoryPluginInt
   protected $entityTypeManager;
 
   /**
-   * The number formatter.
+   * The currency formatter.
    *
-   * @var \CommerceGuys\Intl\Formatter\NumberFormatterInterface
+   * @var \CommerceGuys\Intl\Formatter\CurrencyFormatterInterface
    */
-  protected $numberFormatter;
+  protected $currencyFormatter;
 
   /**
    * Constructs a new ShippingRateWidget object.
@@ -55,14 +54,14 @@ class ShippingRateWidget extends WidgetBase implements ContainerFactoryPluginInt
    *   Any third party settings.
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
-   * @param \Drupal\commerce_price\NumberFormatterFactoryInterface $number_formatter_factory
-   *   The number formatter factory.
+   * @param \CommerceGuys\Intl\Formatter\CurrencyFormatterInterface $currency_formatter
+   *   The currency formatter.
    */
-  public function __construct($plugin_id, $plugin_definition, FieldDefinitionInterface $field_definition, array $settings, array $third_party_settings, EntityTypeManagerInterface $entity_type_manager, NumberFormatterFactoryInterface $number_formatter_factory) {
+  public function __construct($plugin_id, $plugin_definition, FieldDefinitionInterface $field_definition, array $settings, array $third_party_settings, EntityTypeManagerInterface $entity_type_manager, CurrencyFormatterInterface $currency_formatter) {
     parent::__construct($plugin_id, $plugin_definition, $field_definition, $settings, $third_party_settings);
 
     $this->entityTypeManager = $entity_type_manager;
-    $this->numberFormatter = $number_formatter_factory->createInstance();
+    $this->currencyFormatter = $currency_formatter;
   }
 
   /**
@@ -76,7 +75,7 @@ class ShippingRateWidget extends WidgetBase implements ContainerFactoryPluginInt
       $configuration['settings'],
       $configuration['third_party_settings'],
       $container->get('entity_type.manager'),
-      $container->get('commerce_price.number_formatter_factory')
+      $container->get('commerce_price.currency_formatter')
     );
   }
 
@@ -100,13 +99,11 @@ class ShippingRateWidget extends WidgetBase implements ContainerFactoryPluginInt
       foreach ($shipping_rates as $shipping_rate) {
         $service = $shipping_rate->getService();
         $amount = $shipping_rate->getAmount();
-        // @todo Refactor the number formatter to work with just a currency code.
-        $currency = Currency::load($amount->getCurrencyCode());
 
         $option_id = $shipping_method->id() . '--' . $service->getId();
         $option_label = $this->t('@service: @amount', [
           '@service' => $service->getLabel(),
-          '@amount' => $this->numberFormatter->formatCurrency($amount->getNumber(), $currency),
+          '@amount' => $this->currencyFormatter->format($amount->getNumber(), $amount->getCurrencyCode()),
         ]);
         $options[$option_id] = [
           'id' => $option_id,
