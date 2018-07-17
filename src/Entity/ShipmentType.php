@@ -24,7 +24,7 @@ use Drupal\commerce\Entity\CommerceBundleEntityBase;
  *       "delete" = "Drupal\commerce_shipping\Form\ShipmentTypeDeleteForm"
  *     },
  *     "route_provider" = {
- *       "default" = "Drupal\Core\Entity\Routing\DefaultHtmlRouteProvider",
+ *       "default" = "Drupal\entity\Routing\DefaultHtmlRouteProvider",
  *     },
  *   },
  *   admin_permission = "administer commerce_shipment_type",
