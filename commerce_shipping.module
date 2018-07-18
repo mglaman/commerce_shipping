@@ -185,9 +185,7 @@ function commerce_shipping_preprocess_commerce_order(&$variables) {
   $order = $variables['order_entity'];
   $summary = \Drupal::service('commerce_shipping.order_shipment_summary')->build($order);
   if (!empty($summary)) {
-    $variables['order']['shipping_information'] = [
-      '#markup' => render($summary),
-    ];
+    $variables['order']['shipping_information'] = $summary;
   }
 }
 
@@ -199,8 +197,6 @@ function commerce_shipping_preprocess_commerce_order_receipt(&$variables) {
   $order = $variables['order_entity'];
   $summary = \Drupal::service('commerce_shipping.order_shipment_summary')->build($order);
   if (!empty($summary)) {
-    $variables['shipping_information'] = [
-      '#markup' => render($summary),
-    ];
+    $variables['shipping_information'] = $summary;
   }
 }
