@@ -85,16 +85,12 @@ class ShippingRateWidget extends WidgetBase implements ContainerFactoryPluginInt
   public function formElement(FieldItemListInterface $items, $delta, array $element, array &$form, FormStateInterface $form_state) {
     /** @var \Drupal\commerce_shipping\Entity\ShipmentInterface $shipment */
     $shipment = $items[$delta]->getEntity();
-    $use_default_package_type = empty($shipment->getPackageType());
     /** @var \Drupal\commerce_shipping\ShippingMethodStorageInterface $shipping_method_storage */
     $shipping_method_storage = $this->entityTypeManager->getStorage('commerce_shipping_method');
     $shipping_methods = $shipping_method_storage->loadMultipleForShipment($shipment);
     $options = [];
     foreach ($shipping_methods as $shipping_method) {
       $shipping_method_plugin = $shipping_method->getPlugin();
-      if ($use_default_package_type) {
-        $shipment->setPackageType($shipping_method_plugin->getDefaultPackageType());
-      }
       $shipping_rates = $shipping_method_plugin->calculateRates($shipment);
       foreach ($shipping_rates as $shipping_rate) {
         $service = $shipping_rate->getService();
@@ -154,7 +150,11 @@ class ShippingRateWidget extends WidgetBase implements ContainerFactoryPluginInt
       $shipping_method_storage = $this->entityTypeManager->getStorage('commerce_shipping_method');
       /** @var \Drupal\commerce_shipping\Entity\ShippingMethodInterface $shipping_method */
       $shipping_method = $shipping_method_storage->load($shipping_method_id);
-      $shipping_method->getPlugin()->selectRate($shipment, $shipping_rate);
+      $shipping_method_plugin = $shipping_method->getPlugin();
+      if (empty($shipment->getPackageType())) {
+        $shipment->setPackageType($shipping_method_plugin->getDefaultPackageType());
+      }
+      $shipping_method_plugin->selectRate($shipment, $shipping_rate);
 
       // Put delta mapping in $form_state, so that flagErrors() can use it.
       $field_state = static::getWidgetState($form['#parents'], $field_name, $form_state);

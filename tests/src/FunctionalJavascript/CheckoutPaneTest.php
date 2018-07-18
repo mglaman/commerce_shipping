@@ -125,6 +125,24 @@ class CheckoutPaneTest extends CommerceBrowserTestBase {
       'stores' => [$this->store],
     ]);
 
+    /** @var \Drupal\commerce_shipping\Entity\PackageType $package_type */
+    $package_type = $this->createEntity('commerce_package_type', [
+      'id' => 'package_type_a',
+      'label' => 'Package Type A',
+      'dimensions' => [
+        'length' => 20,
+        'width' => 20,
+        'height' => 20,
+        'unit' => 'mm',
+
+      ],
+      'weight' => [
+        'number' => 20,
+        'unit' => 'g',
+      ],
+    ]);
+    \Drupal::service('plugin.manager.commerce_package_type')->clearCachedDefinitions();
+
     // Create two flat rate shipping methods.
     $first_shipping_method = $this->createEntity('commerce_shipping_method', [
       'name' => 'Overnight shipping',
@@ -132,6 +150,7 @@ class CheckoutPaneTest extends CommerceBrowserTestBase {
       'plugin' => [
         'target_plugin_id' => 'flat_rate',
         'target_plugin_configuration' => [
+          'default_package_type' => 'commerce_package_type:' . $package_type->get('uuid'),
           'rate_label' => 'Overnight shipping',
           'rate_amount' => [
             'number' => '19.99',
