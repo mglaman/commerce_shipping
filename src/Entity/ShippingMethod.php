@@ -35,7 +35,8 @@ use Drupal\Core\Field\BaseFieldDefinition;
  *     "route_provider" = {
  *       "default" = "Drupal\entity\Routing\AdminHtmlRouteProvider",
  *     },
- *     "translation" = "Drupal\content_translation\ContentTranslationHandler"
+ *     "translation" = "Drupal\content_translation\ContentTranslationHandler",
+ *     "views_data" = "Drupal\commerce\CommerceEntityViewsData",
  *   },
  *   base_table = "commerce_shipping_method",
  *   data_table = "commerce_shipping_method_field_data",
