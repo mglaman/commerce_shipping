@@ -4,6 +4,6 @@ description: Contains various non-specific things needed in tests.
 package: Testing
 core: 8.x
 dependencies:
-  - commerce_checkout
-  - commerce_payment
-  - commerce_shipping
+  - commerce:commerce_checkout
+  - commerce:commerce_payment
+  - commerce_shipping:commerce_shipping
