@@ -13,4 +13,3 @@ Provides shipping functionality for Drupal Commerce.
   - Select one of the fulfilment workflows.
   - Enable shipping and choose a shipment type.
   - Select the 'Shipping' checkout flow
-
