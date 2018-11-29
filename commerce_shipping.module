@@ -5,12 +5,14 @@
  * Provides core shipping functionality.
  */
 
+use Drupal\Core\Entity\EntityInterface;
 use Drupal\commerce\PurchasableEntityInterface;
 use Drupal\commerce_order\Entity\OrderInterface;
 use Drupal\entity\BundleFieldDefinition;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Url;
 
 /**
  * Implements hook_commerce_entity_trait_info_alter().
@@ -199,4 +201,31 @@ function commerce_shipping_preprocess_commerce_order_receipt(&$variables) {
   if (!empty($summary)) {
     $variables['shipping_information'] = $summary;
   }
+}
+
+/**
+ * Implements hook_entity_operation().
+ */
+function commerce_shipping_entity_operation(EntityInterface $entity) {
+  // Only show the "Shipments" operation link for commerce_order entities.
+  if ($entity->getEntityTypeId() !== 'commerce_order') {
+    return;
+  }
+  // Do not show for a "cart" order.
+  if ($entity->hasField('cart') && $entity->get('cart')->value) {
+    return;
+  }
+  // Only show if the user has the "administer commerce_shipment" permission.
+  if (!\Drupal::currentUser()->hasPermission('administer commerce_shipment')) {
+    return;
+  }
+  $operations = [];
+  $operations['shipments'] = [
+    'title' => t('Shipments'),
+    'url' => Url::fromRoute('entity.commerce_shipment.collection', [
+      'commerce_order' => $entity->id(),
+    ]),
+    'weight' => 60,
+  ];
+  return $operations;
 }

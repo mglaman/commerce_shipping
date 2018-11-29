@@ -91,6 +91,8 @@ class FilterShippingMethodsEventTest extends ShippingKernelTestBase {
       'type' => 'default',
       'order_id' => $order->id(),
       'shipping_method' => $shipping_method_filtered,
+      'title' => 'Shipment',
+      'amount' => new Price('10.00', 'USD'),
       'items' => [
         new ShipmentItem([
           'order_item_id' => 10,

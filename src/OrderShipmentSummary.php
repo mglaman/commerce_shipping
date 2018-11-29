@@ -39,6 +39,10 @@ class OrderShipmentSummary implements OrderShipmentSummaryInterface {
     }
     /** @var \Drupal\commerce_shipping\Entity\ShipmentInterface[] $shipments */
     $shipments = $order->get('shipments')->referencedEntities();
+
+    if (empty($shipments)) {
+      return [];
+    }
     $first_shipment = reset($shipments);
     $shipping_profile = $first_shipment->getShippingProfile();
     if (!$shipping_profile) {

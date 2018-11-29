@@ -66,6 +66,7 @@ class OrderWorkflowTest extends ShippingKernelTestBase {
     $shipment = Shipment::create([
       'type' => 'default',
       'order_id' => $this->order->id(),
+      'title' => 'Shipment',
       'items' => [
         new ShipmentItem([
           'order_item_id' => 10,

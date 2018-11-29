@@ -67,6 +67,7 @@ class TrackingLinkFormatterTest extends CommerceKernelTestBase {
     $shipment = Shipment::create([
       'type' => 'default',
       'state' => 'ready',
+      'title' => 'Shipment',
     ]);
     /** @var \Drupal\commerce_shipping\Entity\ShippingMethodInterface $shipping_method */
     $shipping_method = ShippingMethod::create([

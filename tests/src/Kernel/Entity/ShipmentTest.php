@@ -2,6 +2,7 @@
 
 namespace Drupal\Tests\commerce_shipping\Kernel\Entity;
 
+use Drupal\commerce_order\Adjustment;
 use Drupal\commerce_price\Price;
 use Drupal\commerce_order\Entity\Order;
 use Drupal\commerce_shipping\Entity\Shipment;
@@ -11,7 +12,7 @@ use Drupal\commerce_shipping\ShipmentItem;
 use Drupal\Core\Entity\EntityStorageException;
 use Drupal\physical\Weight;
 use Drupal\profile\Entity\Profile;
-use Drupal\Tests\commerce\Kernel\CommerceKernelTestBase;
+use Drupal\Tests\commerce_shipping\Kernel\ShippingKernelTestBase;
 
 /**
  * Tests the Shipment entity.
@@ -20,22 +21,7 @@ use Drupal\Tests\commerce\Kernel\CommerceKernelTestBase;
  *
  * @group commerce_shipping
  */
-class ShipmentTest extends CommerceKernelTestBase {
-
-  /**
-   * Modules to enable.
-   *
-   * @var array
-   */
-  public static $modules = [
-    'entity_reference_revisions',
-    'physical',
-    'profile',
-    'state_machine',
-    'commerce_order',
-    'commerce_product',
-    'commerce_shipping',
-  ];
+class ShipmentTest extends ShippingKernelTestBase {
 
   /**
    * {@inheritdoc}
@@ -43,16 +29,7 @@ class ShipmentTest extends CommerceKernelTestBase {
   protected function setUp() {
     parent::setUp();
 
-    $this->installEntitySchema('profile');
-    $this->installEntitySchema('commerce_order');
     $this->installEntitySchema('commerce_shipping_method');
-    $this->installEntitySchema('commerce_shipment');
-    $this->installConfig([
-      'physical',
-      'profile',
-      'commerce_order',
-      'commerce_shipping',
-    ]);
   }
 
   /**
@@ -89,6 +66,7 @@ class ShipmentTest extends CommerceKernelTestBase {
    * @covers ::getShippedTime
    * @covers ::setShippedTime
    * @covers ::recalculateWeight
+   * @covers ::postDelete
    */
   public function testShipment() {
     $user = $this->createUser(['mail' => $this->randomString() . '@example.com']);
@@ -100,6 +78,7 @@ class ShipmentTest extends CommerceKernelTestBase {
       'uid' => $user->id(),
       'store_id' => $this->store->id(),
     ]);
+    $order->setRefreshState(Order::REFRESH_SKIP);
     $order->save();
     $order = $this->reloadEntity($order);
 
@@ -122,6 +101,8 @@ class ShipmentTest extends CommerceKernelTestBase {
       'type' => 'default',
       'state' => 'ready',
       'order_id' => $order->id(),
+      'title' => 'Shipment',
+      'amount' => new Price('12.00', 'USD'),
     ]);
 
     $this->assertEquals($order, $shipment->getOrder());
@@ -197,6 +178,24 @@ class ShipmentTest extends CommerceKernelTestBase {
 
     $shipment->setShippedTime(635879800);
     $this->assertEquals(635879800, $shipment->getShippedTime());
+
+    $shipment->save();
+    $order->set('shipments', [$shipment]);
+    $order->addAdjustment(new Adjustment([
+      'type' => 'shipping',
+      'label' => t('Shipping'),
+      'amount' => $shipment->getAmount(),
+      'source_id' => $shipment->id(),
+    ]));
+    $order->setRefreshState(Order::REFRESH_SKIP);
+    $order->save();
+    $order = $this->reloadEntity($order);
+    $this->assertCount(1, $order->getAdjustments());
+    $this->assertCount(1, $order->get('shipments')->referencedEntities());
+    $shipment->delete();
+    $order = $this->reloadEntity($order);
+    $this->assertCount(0, $order->getAdjustments());
+    $this->assertCount(0, $order->get('shipments')->referencedEntities());
   }
 
   /**
@@ -233,6 +232,7 @@ class ShipmentTest extends CommerceKernelTestBase {
     ]);
     $shipment = Shipment::create([
       'type' => 'default',
+      'title' => 'Shipment',
     ]);
     $shipment->populateFromProposedShipment($proposed_shipment);
 
@@ -267,6 +267,7 @@ class ShipmentTest extends CommerceKernelTestBase {
       'type' => 'default',
       'order_id' => 10,
       'shipping_method' => $shipping_method,
+      'title' => 'Shipment',
       'items' => [
         new ShipmentItem([
           'order_item_id' => 10,
@@ -288,6 +289,7 @@ class ShipmentTest extends CommerceKernelTestBase {
     $shipment = Shipment::create([
       'type' => 'default',
       'order_id' => 10,
+      'title' => 'Shipment',
     ]);
     $this->setExpectedException(EntityStorageException::class, 'Required shipment field "items" is empty.');
     $shipment->save();

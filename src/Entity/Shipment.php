@@ -2,6 +2,7 @@
 
 namespace Drupal\commerce_shipping\Entity;
 
+use Drupal\commerce_order\Entity\OrderInterface;
 use Drupal\commerce_shipping\Plugin\Commerce\PackageType\PackageTypeInterface as PackageTypePluginInterface;
 use Drupal\commerce_shipping\ProposedShipment;
 use Drupal\commerce_shipping\ShipmentItem;
@@ -30,9 +31,19 @@ use Drupal\profile\Entity\ProfileInterface;
  *   ),
  *   bundle_label = @Translation("Shipment type"),
  *   handlers = {
+ *     "list_builder" = "Drupal\commerce_shipping\ShipmentListBuilder",
  *     "storage" = "Drupal\commerce_shipping\ShipmentStorage",
  *     "access" = "Drupal\Core\Entity\EntityAccessControlHandler",
- *     "views_data" = "Drupal\views\EntityViewsData"
+ *     "form" = {
+ *       "default" = "Drupal\commerce_shipping\Form\ShipmentForm",
+ *       "add" = "Drupal\commerce_shipping\Form\ShipmentForm",
+ *       "edit" = "Drupal\commerce_shipping\Form\ShipmentForm",
+ *       "delete" = "Drupal\Core\Entity\ContentEntityDeleteForm",
+ *     },
+ *     "views_data" = "Drupal\views\EntityViewsData",
+ *     "route_provider" = {
+ *       "default" = "Drupal\commerce_shipping\ShipmentRouteProvider",
+ *     },
  *   },
  *   base_table = "commerce_shipment",
  *   admin_permission = "administer commerce_shipment",
@@ -43,6 +54,14 @@ use Drupal\profile\Entity\ProfileInterface;
  *     "label" = "title",
  *     "uuid" = "uuid",
  *   },
+ *   links = {
+ *     "canonical" = "/admin/commerce/orders/{commerce_order}/shipments/{commerce_shipment}",
+ *     "add-page" = "/admin/commerce/orders/{commerce_order}/shipments/add",
+ *     "collection" = "/admin/commerce/orders/{commerce_order}/shipments",
+ *     "add-form" = "/admin/commerce/orders/{commerce_order}/shipments/add/{commerce_shipment_type}",
+ *     "edit-form" = "/admin/commerce/orders/{commerce_order}/shipments/{commerce_shipment}/edit",
+ *     "delete-form" = "/admin/commerce/orders/{commerce_order}/shipments/{commerce_shipment}/delete",
+ *   },
  *   bundle_entity_type = "commerce_shipment_type",
  *   field_ui_base_route = "entity.commerce_shipment_type.edit_form",
  * )
@@ -50,6 +69,15 @@ use Drupal\profile\Entity\ProfileInterface;
 class Shipment extends ContentEntityBase implements ShipmentInterface {
 
   use EntityChangedTrait;
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function urlRouteParameters($rel) {
+    $uri_route_parameters = parent::urlRouteParameters($rel);
+    $uri_route_parameters['commerce_order'] = $this->getOrderId();
+    return $uri_route_parameters;
+  }
 
   /**
    * {@inheritdoc}
@@ -358,6 +386,38 @@ class Shipment extends ContentEntityBase implements ShipmentInterface {
   }
 
   /**
+   * {@inheritdoc}
+   */
+  public static function postDelete(EntityStorageInterface $storage, array $entities) {
+    parent::postDelete($storage, $entities);
+
+    // When shipments are being deleted, we need to make sure the parent order
+    // is refreshed so that the corresponding shipping adjustment is removed.
+    $orders_to_refresh = [];
+    /** @var \Drupal\commerce_shipping\Entity\ShipmentInterface[] $entities */
+    foreach ($entities as $shipment) {
+      $order = $shipment->getOrder();
+      if (empty($order) || !$order->hasField('shipments') || $order->get('shipments')->isEmpty()) {
+        continue;
+      }
+      $order_shipments = $order->get('shipments');
+      // Make sure the shipment is not being referenced by the order anymore.
+      /** @var \Drupal\Core\Field\FieldItemListInterface $order_shipments */
+      foreach ($order_shipments as $delta => $item) {
+        if ($item->target_id == $shipment->id()) {
+          $order_shipments->removeItem($delta);
+        }
+      }
+      $orders_to_refresh[$order->id()] = $order;
+    }
+
+    foreach ($orders_to_refresh as $order) {
+      $order->setRefreshState(OrderInterface::REFRESH_ON_SAVE);
+      $order->save();
+    }
+  }
+
+  /**
    * Ensures that the package_type and weight fields are populated.
    */
   protected function prepareFields() {
@@ -468,7 +528,7 @@ class Shipment extends ContentEntityBase implements ShipmentInterface {
       ])
       ->setDisplayOptions('form', [
         'type' => 'string_textfield',
-        'weight' => -5,
+        'weight' => -20,
       ])
       ->setDisplayConfigurable('view', TRUE)
       ->setDisplayConfigurable('form', TRUE);
@@ -500,7 +560,11 @@ class Shipment extends ContentEntityBase implements ShipmentInterface {
       ->setDefaultValue('')
       ->setSetting('max_length', 255)
       ->setDisplayConfigurable('form', TRUE)
-      ->setDisplayConfigurable('view', TRUE);
+      ->setDisplayConfigurable('view', TRUE)
+      ->setDisplayOptions('form', [
+        'type' => 'string_textfield',
+        'weight' => 50,
+      ]);
 
     $fields['state'] = BaseFieldDefinition::create('state')
       ->setLabel(t('State'))

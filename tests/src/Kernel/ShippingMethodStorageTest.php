@@ -90,6 +90,7 @@ class ShippingMethodStorageTest extends ShippingKernelTestBase {
 
     $this->shipment = Shipment::create([
       'type' => 'default',
+      'title' => 'Shipment',
       'items' => [
         new ShipmentItem([
           'order_item_id' => 10,
@@ -100,6 +101,7 @@ class ShippingMethodStorageTest extends ShippingKernelTestBase {
         ]),
       ],
       'order_id' => $this->order->id(),
+      'amount' => new Price("57.88", "USD"),
     ]);
     $this->shipment->save();
   }
