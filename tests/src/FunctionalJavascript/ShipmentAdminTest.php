@@ -10,8 +10,7 @@ use Drupal\commerce_shipping\Entity\Shipment;
 use Drupal\commerce_shipping\ShipmentItem;
 use Drupal\Core\Url;
 use Drupal\physical\Weight;
-use Drupal\Tests\commerce\Functional\CommerceBrowserTestBase;
-use Drupal\Tests\commerce\FunctionalJavascript\JavascriptTestTrait;
+use Drupal\Tests\commerce\FunctionalJavascript\CommerceWebDriverTestBase;
 use Drupal\views\Entity\View;
 
 /**
@@ -19,9 +18,7 @@ use Drupal\views\Entity\View;
  *
  * @group commerce_shipping
  */
-class ShipmentAdminTest extends CommerceBrowserTestBase {
-
-  use JavascriptTestTrait;
+class ShipmentAdminTest extends CommerceWebDriverTestBase {
 
   /**
    * A sample order.

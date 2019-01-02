@@ -8,17 +8,14 @@ use Drupal\commerce_order\Entity\OrderType;
 use Drupal\commerce_payment\Entity\PaymentGateway;
 use Drupal\commerce_price\Price;
 use Drupal\commerce_product\Entity\ProductVariationType;
-use Drupal\Tests\commerce\Functional\CommerceBrowserTestBase;
-use Drupal\Tests\commerce\FunctionalJavascript\JavascriptTestTrait;
+use Drupal\Tests\commerce\FunctionalJavascript\CommerceWebDriverTestBase;
 
 /**
  * Tests the "Shipping information" checkout pane.
  *
  * @group commerce_shipping
  */
-class CheckoutPaneTest extends CommerceBrowserTestBase {
-
-  use JavascriptTestTrait;
+class CheckoutPaneTest extends CommerceWebDriverTestBase {
 
   /**
    * First sample product.

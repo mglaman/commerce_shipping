@@ -3,17 +3,14 @@
 namespace Drupal\Tests\commerce_shipping\FunctionalJavascript;
 
 use Drupal\commerce_shipping\Entity\ShippingMethod;
-use Drupal\Tests\commerce\Functional\CommerceBrowserTestBase;
-use Drupal\Tests\commerce\FunctionalJavascript\JavascriptTestTrait;
+use Drupal\Tests\commerce\FunctionalJavascript\CommerceWebDriverTestBase;
 
 /**
  * Tests the shipping method UI.
  *
  * @group commerce_shipping
  */
-class ShippingMethodTest extends CommerceBrowserTestBase {
-
-  use JavascriptTestTrait;
+class ShippingMethodTest extends CommerceWebDriverTestBase {
 
   /**
    * {@inheritdoc}
@@ -84,7 +81,6 @@ class ShippingMethodTest extends CommerceBrowserTestBase {
     $this->assertEquals(['number' => '10.00', 'currency_code' => 'USD'], $plugin->getConfiguration()['rate_amount']);
 
     $this->drupalGet($shipping_method->toUrl('edit-form'));
-    $this->assertSession()->statusCodeEquals(200);
     $this->assertSession()->fieldExists('name[0][value]');
     $new_shipping_method_name = $this->randomMachineName(8);
     $edit = [
@@ -109,7 +105,6 @@ class ShippingMethodTest extends CommerceBrowserTestBase {
       'name' => $this->randomMachineName(8),
     ]);
     $this->drupalGet($shipping_method->toUrl('delete-form'));
-    $this->assertSession()->statusCodeEquals(200);
     $this->assertSession()->pageTextContains('This action cannot be undone.');
     $this->submitForm([], t('Delete'));
 
