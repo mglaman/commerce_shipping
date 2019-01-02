@@ -2,6 +2,7 @@
 
 namespace Drupal\commerce_shipping\Plugin\Commerce\CheckoutPane;
 
+use Drupal\commerce\InlineFormManager;
 use Drupal\commerce_checkout\Plugin\Commerce\CheckoutPane\CheckoutPaneBase;
 use Drupal\commerce_checkout\Plugin\Commerce\CheckoutFlow\CheckoutFlowInterface;
 use Drupal\commerce_shipping\OrderShipmentSummaryInterface;
@@ -27,6 +28,13 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * )
  */
 class ShippingInformation extends CheckoutPaneBase implements ContainerFactoryPluginInterface {
+
+  /**
+   * The inline form manager.
+   *
+   * @var \Drupal\commerce\InlineFormManager
+   */
+  protected $inlineFormManager;
 
   /**
    * The packer manager.
@@ -55,14 +63,17 @@ class ShippingInformation extends CheckoutPaneBase implements ContainerFactoryPl
    *   The parent checkout flow.
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
+   * @param \Drupal\commerce\InlineFormManager $inline_form_manager
+   *   The inline form manager.
    * @param \Drupal\commerce_shipping\PackerManagerInterface $packer_manager
    *   The packer manager.
    * @param \Drupal\commerce_shipping\OrderShipmentSummaryInterface $order_shipment_summary
    *   The order shipment summary.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, CheckoutFlowInterface $checkout_flow, EntityTypeManagerInterface $entity_type_manager, PackerManagerInterface $packer_manager, OrderShipmentSummaryInterface $order_shipment_summary) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, CheckoutFlowInterface $checkout_flow, EntityTypeManagerInterface $entity_type_manager, InlineFormManager $inline_form_manager, PackerManagerInterface $packer_manager, OrderShipmentSummaryInterface $order_shipment_summary) {
     parent::__construct($configuration, $plugin_id, $plugin_definition, $checkout_flow, $entity_type_manager);
 
+    $this->inlineFormManager = $inline_form_manager;
     $this->packerManager = $packer_manager;
     $this->orderShipmentSummary = $order_shipment_summary;
   }
@@ -77,6 +88,7 @@ class ShippingInformation extends CheckoutPaneBase implements ContainerFactoryPl
       $plugin_definition,
       $checkout_flow,
       $container->get('entity_type.manager'),
+      $container->get('plugin.manager.commerce_inline_form'),
       $container->get('commerce_shipping.packer_manager'),
       $container->get('commerce_shipping.order_shipment_summary')
     );
@@ -175,6 +187,10 @@ class ShippingInformation extends CheckoutPaneBase implements ContainerFactoryPl
     foreach ($store->get('shipping_countries') as $country_item) {
       $available_countries[] = $country_item->value;
     }
+    $inline_form = $this->inlineFormManager->createInstance('customer_profile', [
+      'default_country' => $store->getAddress()->getCountryCode(),
+      'available_countries' => $available_countries,
+    ], $shipping_profile);
 
     // Prepare the form for ajax.
     // Not using Html::getUniqueId() on the wrapper ID to avoid #2675688.
@@ -183,11 +199,11 @@ class ShippingInformation extends CheckoutPaneBase implements ContainerFactoryPl
     $pane_form['#suffix'] = '</div>';
 
     $pane_form['shipping_profile'] = [
-      '#type' => 'commerce_profile_select',
-      '#default_value' => $shipping_profile,
-      '#default_country' => $store->getAddress()->getCountryCode(),
-      '#available_countries' => $available_countries,
+      '#parents' => array_merge($pane_form['#parents'], ['shipping_profile']),
+      '#inline_form' => $inline_form,
     ];
+    $pane_form['shipping_profile'] = $inline_form->buildInlineForm($pane_form['shipping_profile'], $form_state);
+
     $pane_form['recalculate_shipping'] = [
       '#type' => 'button',
       '#value' => $this->t('Recalculate shipping'),
@@ -262,15 +278,17 @@ class ShippingInformation extends CheckoutPaneBase implements ContainerFactoryPl
       // The checkout step was submitted without shipping being calculated.
       // Force the recalculation now and reload the page.
       $recalculate = TRUE;
-      drupal_set_message($this->t('Please select a shipping method.'), 'error');
+      $this->messenger()->addError($this->t('Please select a shipping method.'));
       $form_state->setRebuild(TRUE);
     }
 
     if ($recalculate) {
       $form_state->set('recalculate_shipping', TRUE);
+      /** @var \Drupal\commerce\Plugin\Commerce\InlineForm\EntityInlineFormInterface $inline_form */
+      $inline_form = $pane_form['shipping_profile']['#inline_form'];
       // The profile in form state needs to reflect the submitted values, since
       // it will be passed to the packers when the form is rebuilt.
-      $form_state->set('shipping_profile', $pane_form['shipping_profile']['#profile']);
+      $form_state->set('shipping_profile', $inline_form->getEntity());
     }
 
     foreach ($shipment_indexes as $index) {
@@ -287,6 +305,11 @@ class ShippingInformation extends CheckoutPaneBase implements ContainerFactoryPl
    * {@inheritdoc}
    */
   public function submitPaneForm(array &$pane_form, FormStateInterface $form_state, array &$complete_form) {
+    /** @var \Drupal\commerce\Plugin\Commerce\InlineForm\EntityInlineFormInterface $inline_form */
+    $inline_form = $pane_form['shipping_profile']['#inline_form'];
+    /** @var \Drupal\profile\Entity\ProfileInterface $profile */
+    $profile = $inline_form->getEntity();
+
     // Save the modified shipments.
     $shipments = [];
     foreach (Element::children($pane_form['shipments']) as $index) {
@@ -296,7 +319,7 @@ class ShippingInformation extends CheckoutPaneBase implements ContainerFactoryPl
       $form_display->removeComponent('shipping_profile');
       $form_display->removeComponent('title');
       $form_display->extractFormValues($shipment, $pane_form['shipments'][$index], $form_state);
-      $shipment->setShippingProfile($pane_form['shipping_profile']['#profile']);
+      $shipment->setShippingProfile($profile);
       $shipment->save();
       $shipments[] = $shipment;
     }

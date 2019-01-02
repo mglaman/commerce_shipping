@@ -2,6 +2,7 @@
 
 namespace Drupal\commerce_shipping\Plugin\Field\FieldWidget;
 
+use Drupal\commerce\InlineFormManager;
 use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Field\FieldDefinitionInterface;
@@ -32,6 +33,13 @@ class ShippingProfileWidget extends WidgetBase implements ContainerFactoryPlugin
   protected $entityTypeManager;
 
   /**
+   * The inline form manager.
+   *
+   * @var \Drupal\commerce\InlineFormManager
+   */
+  protected $inlineFormManager;
+
+  /**
    * Constructs a new ShippingProfileWidget object.
    *
    * @param string $plugin_id
@@ -46,11 +54,14 @@ class ShippingProfileWidget extends WidgetBase implements ContainerFactoryPlugin
    *   Any third party settings.
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
+   * @param \Drupal\commerce\InlineFormManager $inline_form_manager
+   *   The inline form manager.
    */
-  public function __construct($plugin_id, $plugin_definition, FieldDefinitionInterface $field_definition, array $settings, array $third_party_settings, EntityTypeManagerInterface $entity_type_manager) {
+  public function __construct($plugin_id, $plugin_definition, FieldDefinitionInterface $field_definition, array $settings, array $third_party_settings, EntityTypeManagerInterface $entity_type_manager, InlineFormManager $inline_form_manager) {
     parent::__construct($plugin_id, $plugin_definition, $field_definition, $settings, $third_party_settings);
 
     $this->entityTypeManager = $entity_type_manager;
+    $this->inlineFormManager = $inline_form_manager;
   }
 
   /**
@@ -63,7 +74,8 @@ class ShippingProfileWidget extends WidgetBase implements ContainerFactoryPlugin
       $configuration['field_definition'],
       $configuration['settings'],
       $configuration['third_party_settings'],
-      $container->get('entity_type.manager')
+      $container->get('entity_type.manager'),
+      $container->get('plugin.manager.commerce_inline_form')
     );
   }
 
@@ -88,17 +100,20 @@ class ShippingProfileWidget extends WidgetBase implements ContainerFactoryPlugin
     foreach ($store->get('shipping_countries') as $country_item) {
       $available_countries[] = $country_item->value;
     }
+    $inline_form = $this->inlineFormManager->createInstance('customer_profile', [
+      'default_country' => $store->getAddress()->getCountryCode(),
+      'available_countries' => $available_countries,
+    ], $profile);
 
     $element['profile'] = [
-      '#type' => 'commerce_profile_select',
-      '#default_value' => $profile,
-      '#default_country' => $store->getAddress()->getCountryCode(),
-      '#available_countries' => $available_countries,
+      '#parents' => array_merge($element['#field_parents'], [$items->getName(), $delta, 'profile']),
+      '#inline_form' => $inline_form,
     ];
+    $element['profile'] = $inline_form->buildInlineForm($element['profile'], $form_state);
     // Workaround for massageFormValues() not getting $element.
     $element['array_parents'] = [
       '#type' => 'value',
-      '#value' => [$items->getName(), 'widget', $delta],
+      '#value' => array_merge($element['#field_parents'], [$items->getName(), 'widget', $delta]),
     ];
 
     return $element;
@@ -111,7 +126,9 @@ class ShippingProfileWidget extends WidgetBase implements ContainerFactoryPlugin
     $new_values = [];
     foreach ($values as $delta => $value) {
       $element = NestedArray::getValue($form, $value['array_parents']);
-      $new_values[$delta]['entity'] = $element['profile']['#profile'];
+      /** @var \Drupal\commerce\Plugin\Commerce\InlineForm\EntityInlineFormInterface $inline_form */
+      $inline_form = $element['profile']['#inline_form'];
+      $new_values[$delta]['entity'] = $inline_form->getEntity();
     }
     return $new_values;
   }
