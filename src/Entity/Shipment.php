@@ -441,17 +441,10 @@ class Shipment extends ContentEntityBase implements ShipmentInterface {
     $weight = NULL;
     foreach ($this->getItems() as $shipment_item) {
       $shipment_item_weight = $shipment_item->getWeight();
-      if (!$weight) {
-        $weight = $shipment_item_weight;
-      }
-      else {
-        // @todo ->add() should perform unit conversions automatically.
-        $shipment_item_weight = $shipment_item_weight->convert($weight->getUnit());
-        $weight = $weight->add($shipment_item_weight);
-      }
+      $weight = $weight ? $weight->add($shipment_item_weight) : $shipment_item_weight;
     }
     if ($package_type = $this->getPackageType()) {
-      $package_type_weight = $package_type->getWeight()->convert($weight->getUnit());
+      $package_type_weight = $package_type->getWeight();
       $weight = $weight->add($package_type_weight);
     }
 
