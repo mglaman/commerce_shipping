@@ -250,6 +250,7 @@ class ShippingInformation extends CheckoutPaneBase implements ContainerFactoryPl
       $form_display = EntityFormDisplay::collectRenderDisplay($shipment, 'default');
       $form_display->removeComponent('shipping_profile');
       $form_display->removeComponent('title');
+      $form_display->removeComponent('tracking_code');
       $form_display->buildForm($shipment, $pane_form['shipments'][$index], $form_state);
       $pane_form['shipments'][$index]['#shipment'] = $shipment;
     }
