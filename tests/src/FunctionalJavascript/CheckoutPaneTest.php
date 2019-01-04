@@ -82,10 +82,10 @@ class CheckoutPaneTest extends CommerceWebDriverTestBase {
 
     // Create the order field.
     $field_definition = commerce_shipping_build_shipment_field_definition($order_type->id());
-    \Drupal::service('commerce.configurable_field_manager')->createField($field_definition);
+    $this->container->get('commerce.configurable_field_manager')->createField($field_definition);
 
     // Install the variation trait.
-    $trait_manager = \Drupal::service('plugin.manager.commerce_entity_trait');
+    $trait_manager = $this->container->get('plugin.manager.commerce_entity_trait');
     $trait = $trait_manager->createInstance('purchasable_entity_shippable');
     $trait_manager->installTrait($trait, 'commerce_product_variation', 'default');
 
@@ -138,7 +138,7 @@ class CheckoutPaneTest extends CommerceWebDriverTestBase {
         'unit' => 'g',
       ],
     ]);
-    \Drupal::service('plugin.manager.commerce_package_type')->clearCachedDefinitions();
+    $this->container->get('plugin.manager.commerce_package_type')->clearCachedDefinitions();
 
     // Create two flat rate shipping methods.
     $first_shipping_method = $this->createEntity('commerce_shipping_method', [

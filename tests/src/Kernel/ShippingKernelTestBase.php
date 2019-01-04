@@ -49,7 +49,7 @@ abstract class ShippingKernelTestBase extends CommerceKernelTestBase {
     $product_variation_type->setGenerateTitle(FALSE);
     $product_variation_type->save();
     // Install the variation trait.
-    $trait_manager = \Drupal::service('plugin.manager.commerce_entity_trait');
+    $trait_manager = $this->container->get('plugin.manager.commerce_entity_trait');
     $trait = $trait_manager->createInstance('purchasable_entity_shippable');
     $trait_manager->installTrait($trait, 'commerce_product_variation', 'default');
 
@@ -59,7 +59,7 @@ abstract class ShippingKernelTestBase extends CommerceKernelTestBase {
     $order_type->save();
     // Create the order field.
     $field_definition = commerce_shipping_build_shipment_field_definition($order_type->id());
-    \Drupal::service('commerce.configurable_field_manager')->createField($field_definition);
+    $this->container->get('commerce.configurable_field_manager')->createField($field_definition);
   }
 
 }

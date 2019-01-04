@@ -89,7 +89,7 @@ class ShippingMethodTest extends CommerceWebDriverTestBase {
     ];
     $this->submitForm($edit, 'Save');
 
-    \Drupal::service('entity_type.manager')->getStorage('commerce_shipping_method')->resetCache([$shipping_method->id()]);
+    $this->container->get('entity_type.manager')->getStorage('commerce_shipping_method')->resetCache([$shipping_method->id()]);
     $shipping_method_changed = ShippingMethod::load($shipping_method->id());
     $this->assertEquals($new_shipping_method_name, $shipping_method_changed->getName(), 'The shipping method name successfully updated.');
     /** @var \Drupal\commerce_shipping\Plugin\Commerce\ShippingMethod\ShippingMethodInterface $plugin */
@@ -108,7 +108,7 @@ class ShippingMethodTest extends CommerceWebDriverTestBase {
     $this->assertSession()->pageTextContains('This action cannot be undone.');
     $this->submitForm([], t('Delete'));
 
-    \Drupal::service('entity_type.manager')->getStorage('commerce_shipping_method')->resetCache([$shipping_method->id()]);
+    $this->container->get('entity_type.manager')->getStorage('commerce_shipping_method')->resetCache([$shipping_method->id()]);
     $shipping_method_exists = (bool) ShippingMethod::load($shipping_method->id());
     $this->assertFalse($shipping_method_exists, 'The new shipping method has been deleted from the database using UI.');
   }

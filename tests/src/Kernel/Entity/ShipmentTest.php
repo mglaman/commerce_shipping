@@ -108,7 +108,7 @@ class ShipmentTest extends ShippingKernelTestBase {
     $this->assertEquals($order, $shipment->getOrder());
     $this->assertEquals($order->id(), $shipment->getOrderId());
 
-    $package_type_manager = \Drupal::service('plugin.manager.commerce_package_type');
+    $package_type_manager = $this->container->get('plugin.manager.commerce_package_type');
     $package_type = $package_type_manager->createInstance('custom_box');
     $shipment->setPackageType($package_type);
     $this->assertEquals($package_type, $shipment->getPackageType());
