@@ -189,7 +189,6 @@ class ShippingInformation extends CheckoutPaneBase implements ContainerFactoryPl
     }
     $inline_form = $this->inlineFormManager->createInstance('customer_profile', [
       'parent_entity_type' => 'commerce_shipment',
-      'default_country' => $store->getAddress()->getCountryCode(),
       'available_countries' => $available_countries,
     ], $shipping_profile);
 
