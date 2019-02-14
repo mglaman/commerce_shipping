@@ -6,6 +6,7 @@ use Drupal\commerce_order\Entity\Order;
 use Drupal\commerce_order\Entity\OrderType;
 use Drupal\commerce_price\Price;
 use Drupal\commerce_product\Entity\ProductVariationType;
+use Drupal\commerce_shipping\Entity\PackageType;
 use Drupal\commerce_shipping\Entity\Shipment;
 use Drupal\commerce_shipping\ShipmentItem;
 use Drupal\Core\Url;
@@ -281,11 +282,25 @@ class ShipmentAdminTest extends CommerceWebDriverTestBase {
    * Tests editing a shipment.
    */
   public function testShipmentEdit() {
+    $method = $this->createEntity('commerce_shipping_method', [
+      'name' => 'The best shipping',
+      'stores' => [$this->store->id()],
+      'plugin' => [
+        'target_plugin_id' => 'dynamic',
+        'target_plugin_configuration' => [
+          'rate_label' => 'The best shipping',
+          'rate_amount' => [
+            'number' => '9.99',
+            'currency_code' => 'USD',
+          ],
+        ],
+      ],
+    ]);
+
     /** @var \Drupal\commerce_shipping\Entity\ShipmentInterface $shipment */
     $shipment = $this->createEntity('commerce_shipment', [
       'type' => 'default',
       'title' => 'Test shipment',
-      'package_type_id' => 'package_type_a',
       'order_id' => $this->order->id(),
       'amount' => new Price('10', 'USD'),
       'items' => [
@@ -298,12 +313,54 @@ class ShipmentAdminTest extends CommerceWebDriverTestBase {
         ]),
       ],
     ]);
+    /** @var \Drupal\commerce_shipping_test\Plugin\Commerce\ShippingMethod\DynamicRate $shipping_method_plugin */
+    $shipping_method_plugin = \Drupal::service('plugin.manager.commerce_shipping_method')->createInstance('dynamic');
+    $shipping_services = $shipping_method_plugin->getServices();
+    $shipment
+      ->setData('owned_by_packer', TRUE)
+      ->setShippingMethod($method)
+      ->setShippingService(key($shipping_services))
+      ->save();
+    $this->assertTrue($shipment->getAmount()->compareTo(new Price('9.99', 'USD')));
+
+    // Edit the shipment.
     $this->drupalGet($this->shipmentUri);
+    $session = $this->assertSession();
     $page = $this->getSession()->getPage();
     $page->clickLink('Edit');
-    $this->assertSession()->addressEquals($this->shipmentUri . '/' . $shipment->id() . '/edit');
-    $this->assertSession()->fieldValueEquals('title[0][value]', $shipment->label());
+    $session->addressEquals($this->shipmentUri . '/' . $shipment->id() . '/edit');
+    $session->fieldValueEquals('title[0][value]', $shipment->label());
     $this->assertTrue($page->hasField($shipment->getItems()[0]->getTitle()));
+
+    // Fill in the address.
+    $address = [
+      'given_name' => 'John',
+      'family_name' => 'Smith',
+      'address_line1' => '1098 Alta Ave',
+      'locality' => 'Mountain View',
+      'administrative_area' => 'CA',
+      'postal_code' => '94043',
+    ];
+    $address_prefix = 'shipping_profile[0][profile][address][0][address]';
+    foreach ($address as $property => $value) {
+      $page->fillField($address_prefix . '[' . $property . ']', $value);
+    }
+
+    // Change the package type.
+    $package_type = PackageType::load('package_type_a');
+    $page->fillField('package_type', 'commerce_package_type:' . $package_type->uuid());
+    $page->pressButton('Recalculate shipping');
+    $this->waitForAjaxToFinish();
+    $page->pressButton('Save');
+
+    // Ensure the new package type is selected.
+    $page->clickLink('Edit');
+    $session->fieldValueEquals('package_type', 'commerce_package_type:' . $package_type->uuid());
+    $shipment = \Drupal::entityTypeManager()->getStorage('commerce_shipment')->loadUnchanged($shipment->id());
+
+    // Ensure the shipment has been updated.
+    $this->assertFalse($shipment->getData('owned_by_packer', TRUE));
+    $this->assertSame(0, $shipment->getAmount()->compareTo(new Price('199.80', 'USD')));
   }
 
   /**

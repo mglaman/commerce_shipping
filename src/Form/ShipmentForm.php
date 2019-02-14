@@ -238,6 +238,7 @@ class ShipmentForm extends ContentEntityForm {
     /** @var \Drupal\commerce_shipping\Entity\ShipmentInterface $shipment */
     $shipment = $this->getEntity();
     $this->addShippingItems($form, $form_state);
+    $shipment->setData('owned_by_packer', FALSE);
     $shipment->save();
 
     // Make sure the shipment gets added to the order.
