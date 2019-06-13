@@ -50,6 +50,13 @@ function commerce_shipping_entity_base_field_info(EntityTypeInterface $entity_ty
 }
 
 /**
+ * Implements hook_views_data_alter().
+ */
+function commerce_shipping_views_data_alter(array &$data) {
+  $data['commerce_shipment']['state']['filter']['id'] = 'state_machine_state';
+}
+
+/**
  * Implements hook_field_widget_form_alter().
  */
 function commerce_shipping_field_widget_form_alter(&$element, FormStateInterface $form_state, $context) {
