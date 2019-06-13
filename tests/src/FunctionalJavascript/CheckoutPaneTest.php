@@ -446,6 +446,74 @@ class CheckoutPaneTest extends CommerceWebDriverTestBase {
   }
 
   /**
+   * Tests checkout when no shipping options are available.
+   *
+   * It should prevent continuation but not crash.
+   */
+  public function testNoShippingOptions() {
+    $third_store = $this->createStore();
+
+    $variation = $this->createEntity('commerce_product_variation', [
+      'type' => 'default',
+      'sku' => strtolower($this->randomMachineName()),
+      'price' => [
+        'number' => '8.99',
+        'currency_code' => 'USD',
+      ],
+    ]);
+    /** @var \Drupal\commerce_product\Entity\ProductInterface $product */
+    $third_product = $this->createEntity('commerce_product', [
+      'type' => 'default',
+      'title' => 'Conference bow tie',
+      'variations' => [$variation],
+      'stores' => [$third_store],
+    ]);
+
+    $checkout_flow = CheckoutFlow::load('shipping');
+    $checkout_flow_configuration = $checkout_flow->get('configuration');
+    $checkout_flow_configuration['panes']['shipping_information']['require_shipping_profile'] = FALSE;
+    $checkout_flow->set('configuration', $checkout_flow_configuration);
+    $checkout_flow->save();
+
+    $this->drupalGet($third_product->toUrl()->toString());
+    $this->submitForm([], 'Add to cart');
+
+    $this->drupalGet('checkout/1');
+    $this->assertSession()->pageTextContains('There are no shipping rates available for this address.');
+    $page = $this->getSession()->getPage();
+
+    // Complete the order information step.
+    $address = [
+      'given_name' => 'John',
+      'family_name' => 'Smith',
+      'address_line1' => '1098 Alta Ave',
+      'locality' => 'Mountain View',
+      'administrative_area' => 'CA',
+      'postal_code' => '94043',
+    ];
+    $address_prefix = 'shipping_information[shipping_profile][address][0][address]';
+    $page->fillField($address_prefix . '[country_code]', 'US');
+    $this->waitForAjaxToFinish();
+    foreach ($address as $property => $value) {
+      $page->fillField($address_prefix . '[' . $property . ']', $value);
+    }
+    $this->submitForm([
+      'payment_information[add_payment_method][payment_details][number]' => '4111111111111111',
+      'payment_information[add_payment_method][payment_details][expiration][month]' => '02',
+      'payment_information[add_payment_method][payment_details][expiration][year]' => '2020',
+      'payment_information[add_payment_method][payment_details][security_code]' => '123',
+      'payment_information[add_payment_method][billing_information][address][0][address][given_name]' => 'Johnny',
+      'payment_information[add_payment_method][billing_information][address][0][address][family_name]' => 'Appleseed',
+      'payment_information[add_payment_method][billing_information][address][0][address][address_line1]' => '123 New York Drive',
+      'payment_information[add_payment_method][billing_information][address][0][address][locality]' => 'New York City',
+      'payment_information[add_payment_method][billing_information][address][0][address][administrative_area]' => 'NY',
+      'payment_information[add_payment_method][billing_information][address][0][address][postal_code]' => '10001',
+    ], 'Continue to review');
+
+    $this->assertSession()->pageTextContains('A valid shipping method must be selected in order to check out.');
+  }
+
+  /**
    * Asserts that a select field has all of the provided options.
    *
    * Core only has assertOption(), this helper decreases the number of needed
