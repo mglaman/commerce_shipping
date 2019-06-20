@@ -563,14 +563,14 @@ class Shipment extends ContentEntityBase implements ShipmentInterface {
       ->setLabel(t('State'))
       ->setDescription(t('The shipment state.'))
       ->setRequired(TRUE)
-      ->setSetting('workflow', 'shipment_default')
       ->setDisplayOptions('view', [
         'label' => 'hidden',
         'type' => 'state_transition_form',
         'weight' => 10,
       ])
       ->setDisplayConfigurable('form', TRUE)
-      ->setDisplayConfigurable('view', TRUE);
+      ->setDisplayConfigurable('view', TRUE)
+      ->setSetting('workflow_callback', ['\Drupal\commerce_shipping\Entity\Shipment', 'getWorkflowId']);
 
     $fields['data'] = BaseFieldDefinition::create('map')
       ->setLabel(t('Data'))
@@ -591,6 +591,24 @@ class Shipment extends ContentEntityBase implements ShipmentInterface {
       ->setDescription(t('The time when the shipment was shipped.'));
 
     return $fields;
+  }
+
+  /**
+   * Gets the workflow ID for the state field.
+   *
+   * @param \Drupal\commerce_shipping\Entity\ShipmentInterface $shipment
+   *   The shipment.
+   *
+   * @return string
+   *   The workflow ID.
+   */
+  public static function getWorkflowId(ShipmentInterface $shipment) {
+    if (!empty($shipping_method = $shipment->get('shipping_method')->entity)) {
+      if (!empty($plugin = $shipping_method->getPlugin())) {
+        return $plugin->getWorkflowId();
+      }
+    }
+    return 'shipment_default';
   }
 
 }

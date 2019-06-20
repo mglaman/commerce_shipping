@@ -65,6 +65,9 @@ commerce_shipping_method_configuration:
       orderby: value
       sequence:
         type: string
+    workflow:
+      type: string
+      label: 'Shipment workflow'
 
 commerce_shipping.commerce_shipment_type.*:
   type: commerce_config_entity_bundle
