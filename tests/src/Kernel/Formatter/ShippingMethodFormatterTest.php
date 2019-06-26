@@ -79,23 +79,12 @@ class ShippingMethodFormatterTest extends CommerceKernelTestBase {
     ]);
     $shipping_method->save();
 
-    // @todo Remove this once the items field is no longer required.
-    $shipment_items = [];
-    $shipment_items[] = new ShipmentItem([
-      'order_item_id' => 10,
-      'title' => 'T-shirt (red, large)',
-      'quantity' => 2,
-      'weight' => new Weight('40', 'kg'),
-      'declared_value' => new Price('30', 'USD'),
-    ]);
-
     $shipment = Shipment::create([
       'type' => 'default',
       // The order ID is invalid, but this test doesn't need to care about that.
       'order_id' => '6',
       'shipping_method' => $shipping_method->id(),
       'shipping_service' => 'default',
-      'items' => $shipment_items,
       'title' => 'Shipment #1',
       'state' => 'ready',
     ]);

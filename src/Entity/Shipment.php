@@ -378,7 +378,7 @@ class Shipment extends ContentEntityBase implements ShipmentInterface {
     parent::preSave($storage);
 
     $this->prepareFields();
-    foreach (['order_id', 'items'] as $field) {
+    foreach (['order_id'] as $field) {
       if ($this->get($field)->isEmpty()) {
         throw new EntityMalformedException(sprintf('Required shipment field "%s" is empty.', $field));
       }
