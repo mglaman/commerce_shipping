@@ -183,7 +183,7 @@ class ShippingRateWidget extends WidgetBase implements ContainerFactoryPluginInt
     return $entity_type == 'commerce_shipment' && $field_name == 'shipping_method';
   }
 
-   /**
+  /**
    * {@inheritdoc}
    */
   public function flagErrors(FieldItemListInterface $items, ConstraintViolationListInterface $violations, array $form, FormStateInterface $form_state) {
