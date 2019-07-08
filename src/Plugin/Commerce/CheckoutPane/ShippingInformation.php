@@ -188,8 +188,11 @@ class ShippingInformation extends CheckoutPaneBase implements ContainerFactoryPl
       $available_countries[] = $country_item->value;
     }
     $inline_form = $this->inlineFormManager->createInstance('customer_profile', [
-      'parent_entity_type' => 'commerce_shipment',
+      'instance_id' => 'shipping',
       'available_countries' => $available_countries,
+      'address_book_uid' => $this->order->getCustomerId(),
+      // Don't copy the profile to address book until the order is placed.
+      'copy_on_save' => FALSE,
     ], $shipping_profile);
 
     // Prepare the form for ajax.
@@ -355,7 +358,7 @@ class ShippingInformation extends CheckoutPaneBase implements ContainerFactoryPl
     if (!$shipping_profile) {
       $shipping_profile = $this->entityTypeManager->getStorage('profile')->create([
         'type' => 'customer',
-        'uid' => $this->order->getCustomerId(),
+        'uid' => 0,
       ]);
     }
 

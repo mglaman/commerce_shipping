@@ -93,7 +93,7 @@ class ShippingProfileWidget extends WidgetBase implements ContainerFactoryPlugin
     else {
       $profile = $this->entityTypeManager->getStorage('profile')->create([
         'type' => 'customer',
-        'uid' => $order->getCustomerId(),
+        'uid' => 0,
       ]);
     }
     $available_countries = [];
@@ -101,8 +101,10 @@ class ShippingProfileWidget extends WidgetBase implements ContainerFactoryPlugin
       $available_countries[] = $country_item->value;
     }
     $inline_form = $this->inlineFormManager->createInstance('customer_profile', [
-      'parent_entity_type' => 'commerce_shipment',
+      'instance_id' => 'shipping',
       'available_countries' => $available_countries,
+      'address_book_uid' => $order->getCustomerId(),
+      'admin' => TRUE,
     ], $profile);
 
     $element['profile'] = [
