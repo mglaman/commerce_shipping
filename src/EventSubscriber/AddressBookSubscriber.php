@@ -81,16 +81,21 @@ class AddressBookSubscriber implements EventSubscriberInterface {
    * @param \Drupal\commerce_order\Entity\OrderInterface $order
    *   The order.
    *
-   * @return \Drupal\profile\Entity\ProfileInterface
-   *   The shipping profile.
+   * @return \Drupal\profile\Entity\ProfileInterface|null
+   *   The shipping profile, or NULL if none found.
    */
   protected function getShippingProfile(OrderInterface $order) {
+    if (!$order->hasField('shipments')) {
+      // The order is not shippable.
+      return NULL;
+    }
     $shipping_profile = NULL;
     /** @var \Drupal\commerce_shipping\Entity\ShipmentInterface $shipment */
     foreach ($order->get('shipments')->referencedEntities() as $shipment) {
       $shipping_profile = $shipment->getShippingProfile();
       break;
     }
+
     return $shipping_profile;
   }
 
